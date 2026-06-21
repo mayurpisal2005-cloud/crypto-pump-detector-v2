@@ -1,4 +1,5 @@
-from src.utils.config import COINS
+
+
 import requests
 import pandas as pd
 import numpy as np
@@ -19,6 +20,37 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_PATH = BASE_DIR / "models" / "xgboost.pkl"
 
 model = joblib.load(MODEL_PATH)
+
+COINS = [
+    "bitcoin",
+    "ethereum",
+    "solana",
+    "dogecoin",
+    "cardano",
+    "avalanche-2",
+    "chainlink",
+    "polygon",
+    "tron",
+    "litecoin",
+    "shiba-inu",
+    "pepe",
+    "floki",
+    "bonk",
+    "dogwifcoin",
+    "render-token",
+    "bittensor",
+    "fetch-ai",
+    "arbitrum",
+    "optimism",
+    "sei-network",
+    "sui",
+    "aptos",
+    "near",
+    "kaspa",
+    "injective-protocol",
+    "beam-2",
+    "starknet"
+]
 
 # ==========================
 # INPUT SCHEMA
