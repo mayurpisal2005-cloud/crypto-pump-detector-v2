@@ -338,12 +338,24 @@ def fetch_coin_data(coin):
         f"?vs_currency=usd&days=30"
     )
 
-    response = requests.get(url)
+    headers = {
+        "User-Agent": "CryptoPumpDetector/1.0"
+    }
+
+    response = requests.get(
+        url,
+        headers=headers,
+        timeout=20
+    )
+
+    print(
+        f"{coin} -> Status {response.status_code}"
+    )
 
     if response.status_code != 200:
 
         raise Exception(
-            f"Coin not found: {coin}"
+            f"Status {response.status_code} for {coin}"
         )
 
     data = response.json()
