@@ -1,3 +1,4 @@
+from live_predict import app
 from fastapi import FastAPI
 from pydantic import BaseModel
 
@@ -84,47 +85,37 @@ class PumpFeatures(BaseModel):
 # FEATURE ORDER
 # =====================
 
-FEATURE_COLUMNS = [
-
+FEATURE_COLUMNS =[
+    
     "price_change_1",
-    "price_change_3",
-    "price_change_6",
+        "price_change_3",
+        "price_change_6",
+        "volume_change_1",
+        "volume_change_3",
+        "volume_change_6",
+        "distance_ma_long",
+        "volatility_short",
+        "volatility_long",
+        "momentum_10",
+        "volume_zscore",
+        "volume_spike",
+        "bollinger_width",
+        "bollinger_breakout",
+        "rsi",
+        "relative_volume",
+        "breakout_strength",
+        "green_candle_count",
+        "volume_acceleration",
+        "rsi_change",
+        "above_ma_short",
+        "above_ma_medium",
+        "price_acceleration",
+        "rsi_above_60",
+        "volume_ma_ratio",
+        "above_bollinger_mid"
+    ]
 
-    "volume_change_1",
-    "volume_change_3",
-    "volume_change_6",
 
-    "distance_ma_long",
-
-    "volatility_short",
-    "volatility_long",
-
-    "momentum_10",
-
-    "volume_zscore",
-    "volume_spike",
-
-    "bollinger_width",
-    "bollinger_breakout",
-
-    "rsi",
-
-    "relative_volume",
-    "breakout_strength",
-    "green_candle_count",
-
-    "volume_acceleration",
-    "rsi_change",
-
-    "above_ma_short",
-    "above_ma_medium",
-
-    "price_acceleration",
-    "volume_ma_ratio",
-
-    "rsi_above_60",
-    "above_bollinger_mid"
-]
 
 
 # =====================

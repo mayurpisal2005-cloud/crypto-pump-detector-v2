@@ -7,19 +7,18 @@ import joblib
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-
-# ==========================
-# LOAD MODEL
-# ==========================
-
-model = joblib.load(
-    "models/xgboost.pkl"
-)
-
+from pathlib import Path
 app = FastAPI(
     title="Live Crypto Pump Detector"
 )
 
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+MODEL_PATH = BASE_DIR / "models" / "xgboost.pkl"
+
+model = joblib.load(MODEL_PATH)
 
 # ==========================
 # INPUT SCHEMA
@@ -28,7 +27,6 @@ app = FastAPI(
 class CoinRequest(BaseModel):
 
     coin: str
-
 
 # ==========================
 # RSI
@@ -65,91 +63,131 @@ def calculate_rsi(
         )
     )
 
-
 # ==========================
 # FEATURE ENGINEERING
 # ==========================
 
 def build_features(df):
 
+    # PRICE FEATURES
+
     df["price_change_1"] = (
-        df["price"]
-        .pct_change(1)
-        * 100
+        df["price"].pct_change() * 100
     )
 
     df["price_change_3"] = (
-        df["price"]
-        .pct_change(3)
-        * 100
+        df["price"].pct_change(3) * 100
     )
 
     df["price_change_6"] = (
-        df["price"]
-        .pct_change(6)
-        * 100
+        df["price"].pct_change(6) * 100
     )
 
+    # VOLUME FEATURES
+
     df["volume_change_1"] = (
-        df["volume"]
-        .pct_change(1)
-        * 100
+        df["volume"].pct_change() * 100
     )
 
     df["volume_change_3"] = (
-        df["volume"]
-        .pct_change(3)
-        * 100
+        df["volume"].pct_change(3) * 100
     )
 
     df["volume_change_6"] = (
-        df["volume"]
-        .pct_change(6)
-        * 100
+        df["volume"].pct_change(6) * 100
     )
 
-    ma_long = (
+    # MOVING AVERAGES
+
+    df["ma_short"] = (
+        df["price"]
+        .rolling(5)
+        .mean()
+    )
+
+    df["ma_medium"] = (
+        df["price"]
+        .rolling(10)
+        .mean()
+    )
+
+    df["ma_long"] = (
         df["price"]
         .rolling(20)
         .mean()
     )
 
+    # BOLLINGER
+
+    rolling_std = (
+        df["price"]
+        .rolling(20)
+        .std()
+    )
+
+    df["bollinger_upper"] = (
+        df["ma_long"]
+        + (2 * rolling_std)
+    )
+
+    df["bollinger_lower"] = (
+        df["ma_long"]
+        - (2 * rolling_std)
+    )
+
+    df["bollinger_width"] = (
+        (
+            df["bollinger_upper"]
+            - df["bollinger_lower"]
+        )
+        / df["ma_long"]
+    ) * 100
+
+    df["bollinger_breakout"] = (
+        df["price"]
+        > df["bollinger_upper"]
+    ).astype(int)
+
+    # DISTANCE
+
     df["distance_ma_long"] = (
         (
             df["price"]
-            - ma_long
+            - df["ma_long"]
         )
-        / ma_long
+        / df["ma_long"]
     ) * 100
 
+    # VOLATILITY
+
     df["volatility_short"] = (
-        df["price"]
-        .pct_change()
+        df["price_change_1"]
         .rolling(10)
         .std()
-        * 100
     )
 
     df["volatility_long"] = (
-        df["price"]
-        .pct_change()
+        df["price_change_1"]
         .rolling(20)
         .std()
-        * 100
     )
+
+    # MOMENTUM
 
     df["momentum_10"] = (
         df["price"]
         - df["price"].shift(10)
     )
 
-    volume_mean = (
+    # VOLUME Z SCORE
+
+    rolling_volume_mean = (
         df["volume"]
         .rolling(20)
         .mean()
     )
 
-    volume_std = (
+    rolling_volume_std = (
         df["volume"]
         .rolling(20)
         .std()
@@ -158,62 +196,136 @@ def build_features(df):
     df["volume_zscore"] = (
         (
             df["volume"]
-            - volume_mean
+            - rolling_volume_mean
         )
-        / volume_std
+        / rolling_volume_std
     )
 
-    df["volume_spike"] = np.where(
-        df["volume_zscore"] > 2,
-        1,
+    df["volume_spike"] = (
+        df["volume_zscore"] > 2
+    ).astype(int)
+
+    # RELATIVE VOLUME
+
+    df["relative_volume"] = (
+        df["volume"]
+        / rolling_volume_mean
+    )
+
+    # BREAKOUT STRENGTH
+
+    rolling_high = (
+        df["price"]
+        .rolling(24)
+        .max()
+    )
+
+    df["breakout_strength"] = (
+        (
+            df["price"]
+            - rolling_high
+        )
+        / rolling_high
+    ) * 100
+
+    # GREEN CANDLES
+
+    df["green_candle"] = (
+        df["price_change_1"] > 0
+    ).astype(int)
+
+    df["green_candle_count"] = (
+        df["green_candle"]
+        .rolling(6)
+        .sum()
+    )
+
+    # RSI
+
+    delta = df["price"].diff()
+
+    gains = delta.where(
+        delta > 0,
         0
     )
 
-    rolling_mean = (
-        df["price"]
-        .rolling(20)
+    losses = -delta.where(
+        delta < 0,
+        0
+    )
+
+    avg_gain = (
+        gains
+        .rolling(14)
         .mean()
     )
 
-    rolling_std = (
+    avg_loss = (
+        losses
+        .rolling(14)
+        .mean()
+    )
+
+    rs = avg_gain / avg_loss
+
+    df["rsi"] = (
+        100 - (100 / (1 + rs))
+    )
+
+    # EXTRA FEATURES
+
+    df["volume_acceleration"] = (
+        df["volume_change_1"]
+        - df["volume_change_3"]
+    )
+
+    df["rsi_change"] = (
+        df["rsi"]
+        - df["rsi"].shift(3)
+    )
+
+    df["above_ma_short"] = (
         df["price"]
-        .rolling(20)
-        .std()
-    )
+        > df["ma_short"]
+    ).astype(int)
 
-    upper_band = (
-        rolling_mean
-        + 2 * rolling_std
-    )
-
-    lower_band = (
-        rolling_mean
-        - 2 * rolling_std
-    )
-
-    df["bollinger_width"] = (
-        (
-            upper_band
-            - lower_band
-        )
-        / rolling_mean
-    ) * 100
-
-    df["bollinger_breakout"] = np.where(
-        df["price"] > upper_band,
-        1,
-        0
-    )
-
-    df["rsi"] = calculate_rsi(
+    df["above_ma_medium"] = (
         df["price"]
+        > df["ma_medium"]
+    ).astype(int)
+
+    df["price_acceleration"] = (
+        df["price_change_1"]
+        - df["price_change_3"]
+    )
+
+    df["rsi_above_60"] = (
+        df["rsi"] > 60
+    ).astype(int)
+
+    df["volume_ma_ratio"] = (
+        df["volume"]
+        /
+        df["volume"]
+        .rolling(10)
+        .mean()
+    )
+
+    df["above_bollinger_mid"] = (
+        df["price"]
+        > df["ma_long"]
+    ).astype(int)
+
+    df = df.replace(
+        [np.inf, -np.inf],
+        np.nan
     )
 
     df = df.dropna()
 
     return df
 
-
+    
 # ==========================
 # FETCH LIVE DATA
 # ==========================
@@ -255,7 +367,6 @@ def fetch_coin_data(coin):
 
     return pd.DataFrame(rows)
 
-
 # ==========================
 # ROUTES
 # ==========================
@@ -266,8 +377,6 @@ def home():
     return {
         "status": "running"
     }
-
-
 @app.post("/predict-coin")
 def predict_coin(
     request: CoinRequest
@@ -275,29 +384,40 @@ def predict_coin(
 
     feature_columns = [
 
-        "price_change_1",
-        "price_change_3",
-        "price_change_6",
+    "price_change_1",
+    "price_change_3",
+    "price_change_6",
 
-        "volume_change_1",
-        "volume_change_3",
-        "volume_change_6",
+    "volume_change_1",
+    "volume_change_3",
+    "volume_change_6",
 
-        "distance_ma_long",
+    "distance_ma_long",
 
-        "volatility_short",
-        "volatility_long",
+    "volatility_short",
+    "volatility_long",
 
-        "momentum_10",
+    "momentum_10",
 
-        "volume_zscore",
-        "volume_spike",
+    "volume_zscore",
+    "volume_spike",
 
-        "bollinger_width",
-        "bollinger_breakout",
+    "bollinger_width",
+    "bollinger_breakout",
 
-        "rsi"
-    ]
+    "rsi",
+    "relative_volume",
+    "breakout_strength",
+    "green_candle_count",
+    "volume_acceleration",
+    "rsi_change",
+    "above_ma_short",
+    "above_ma_medium",
+    "price_acceleration",
+    "rsi_above_60",
+    "volume_ma_ratio",
+    "above_bollinger_mid"
+]
 
     df = fetch_coin_data(
         request.coin
@@ -394,30 +514,40 @@ def scan_market():
 
     feature_columns = [
 
-        "price_change_1",
-        "price_change_3",
-        "price_change_6",
+    "price_change_1",
+    "price_change_3",
+    "price_change_6",
 
-        "volume_change_1",
-        "volume_change_3",
-        "volume_change_6",
+    "volume_change_1",
+    "volume_change_3",
+    "volume_change_6",
 
-        "distance_ma_long",
+    "distance_ma_long",
 
-        "volatility_short",
-        "volatility_long",
+    "volatility_short",
+    "volatility_long",
 
-        "momentum_10",
+    "momentum_10",
 
-        "volume_zscore",
-        "volume_spike",
+    "volume_zscore",
+    "volume_spike",
 
-        "bollinger_width",
-        "bollinger_breakout",
+    "bollinger_width",
+    "bollinger_breakout",
 
-        "rsi"
-    ]
-
+    "rsi",
+    "relative_volume",
+    "breakout_strength",
+    "green_candle_count",
+    "volume_acceleration",
+    "rsi_change",
+    "above_ma_short",
+    "above_ma_medium",
+    "price_acceleration",
+    "rsi_above_60",
+    "volume_ma_ratio",
+    "above_bollinger_mid"
+]
     print("\n")
     print("=" * 60)
     print("SCANNING MARKET")
@@ -482,6 +612,10 @@ def scan_market():
             print(
                 f"Failed: {coin}"
             )
+            print(
+
+            f"ERROR: {e}"
+            )
 
             failed_coins.append(
                 coin
@@ -509,4 +643,4 @@ def scan_market():
 
         "top_pump_candidates":
             results[:10]
-    }
+    }                                                                                                                                                    
