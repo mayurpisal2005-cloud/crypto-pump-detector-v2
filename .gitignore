@@ -9,3 +9,8 @@ data/processed/
 notebooks/
 
 .env
+
+venv/
+.venv/
+__pycache__/
+*.pyc
