@@ -19,17 +19,19 @@ def fetch_coin_data(coin):
             f"?vs_currency=usd"
             f"&days={LOOKBACK_DAYS}"
         )
+        headers = {
+             "User-Agent": "CryptoPumpDetector/1.0"
+
+    }
 
         response = requests.get(
             url,
-            timeout=30
-        )
-
-        if response.status_code != 200:
-
-            print(
-                f"Failed: {coin} | Status: {response.status_code}"
+            headers=headers,
+            timeout=20
             )
+        print(f"{coin} -> Status {response.status_code}")
+        if response.status_code != 200:
+            print(response.text[:500])
 
             return pd.DataFrame()
 
