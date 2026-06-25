@@ -1,6 +1,7 @@
 import time
 import requests
 import pandas as pd
+import os
 
 from src.utils.config import (
     COINS,
@@ -20,9 +21,16 @@ def fetch_coin_data(coin):
             f"&days={LOOKBACK_DAYS}"
         )
         headers = {
-             "User-Agent": "CryptoPumpDetector/1.0"
+    "User-Agent": "CryptoPumpDetector/1.0",
+    "x-cg-demo-api-key": os.getenv("coingecko-api-key")
+}
+        print(
+    "API KEY FOUND:",
+    os.getenv("coingecko-api-key") is not None
+)
 
-    }
+
+
 
         response = requests.get(
             url,
