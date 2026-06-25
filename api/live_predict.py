@@ -516,15 +516,15 @@ def predict_coin(
         probability >= ALERT_THRESHOLD
     )
 
-    if probability_percent >= 10:
+    if probability_percent >= 50:
 
         confidence = "HIGH"
 
-    elif probability_percent >= 5:
+    elif probability_percent >= 20:
 
         confidence = "MEDIUM"
 
-    elif probability_percent >= 2:
+    elif probability_percent >= 10:
 
         confidence = "LOW"
 
