@@ -39,6 +39,8 @@ def fetch_coin_data(coin):
             f"?vs_currency=usd"
             f"&days={LOOKBACK_DAYS}"
         )
+        print("API KEY:", api_key)
+        print("HEADERS:", headers)
 
         response = requests.get(
             url,

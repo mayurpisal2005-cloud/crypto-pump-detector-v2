@@ -385,8 +385,14 @@ def fetch_coin_data(coin):
     )
 
     if response.status_code != 200:
+            print("=" * 50)
+            print(f"COIN: {coin}")
+            print(f"STATUS: {response.status_code}")
+            print("RESPONSE:")
+            print(response.text)
+            print("=" * 50)
 
-        raise Exception(
+            raise Exception(
             f"Status {response.status_code} for {coin}"
         )
 
