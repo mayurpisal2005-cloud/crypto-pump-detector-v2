@@ -22,7 +22,7 @@ def fetch_coin_data(coin):
         )
         headers = {
     "User-Agent": "CryptoPumpDetector/1.0",
-    "x-cg-demo-api-key": os.getenv("coingecko-api-key")
+    "x-cg-pro-api-key": os.getenv("coingecko-api-key")
 }
         print(
     "API KEY FOUND:",
