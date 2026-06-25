@@ -1,5 +1,5 @@
 
-
+from src.utils.config import LOOKBACK_DAYS
 import requests
 import pandas as pd
 import numpy as np
@@ -363,20 +363,28 @@ def build_features(df):
 # ==========================
 
 def fetch_coin_data(coin):
-
+    import os 
+    api_key = os.getenv("coingecko-api-key")
+    print("API KEY FOUND:", api_key is not None)
     url = (
-        f"https://api.coingecko.com/api/v3/"
-        f"coins/{coin}/market_chart"
-        f"?vs_currency=usd&days=30"
-    )
 
-    headers = {
-        "User-Agent": "CryptoPumpDetector/1.0"
-    }
+    f"https://api.coingecko.com/api/v3/coins/"
+
+    f"{coin}/market_chart"
+
+    f"?vs_currency=usd"
+
+    f"&days={LOOKBACK_DAYS}"
+
+    f"&x_cg_demo_api_key={api_key}"
+
+)
+
+
 
     response = requests.get(
         url,
-        headers=headers,
+       
         timeout=20
     )
 
