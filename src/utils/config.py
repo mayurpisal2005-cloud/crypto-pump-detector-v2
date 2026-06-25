@@ -12,7 +12,7 @@ COINS = [
     "cardano",
     "avalanche-2",
     "chainlink",
-    "polygon",
+    "matic-network",
     "tron",
     "litecoin",
 
