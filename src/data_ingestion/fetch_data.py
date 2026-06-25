@@ -12,6 +12,25 @@ from src.utils.config import (
 
 def fetch_coin_data(coin):
 
+    import os
+
+    api_key = os.getenv("coingecko-api-key")
+
+    print("API KEY FOUND:", api_key is not None)
+
+    if api_key:
+        print("KEY PREFIX:", api_key[:10])
+
+    headers = {
+        "User-Agent": "CryptoPumpDetector/1.0",
+        "x-cg-demo-api-key": api_key
+    }
+
+    print(
+        "API KEY FOUND:",
+        os.getenv("coingecko-api-key") is not None
+    )
+
     try:
 
         url = (
@@ -20,27 +39,17 @@ def fetch_coin_data(coin):
             f"?vs_currency=usd"
             f"&days={LOOKBACK_DAYS}"
         )
-        headers = {
-    "User-Agent": "CryptoPumpDetector/1.0",
-    "x-cg-pro-api-key": os.getenv("coingecko-api-key")
-}
-        print(
-    "API KEY FOUND:",
-    os.getenv("coingecko-api-key") is not None
-)
-
-
-
 
         response = requests.get(
             url,
             headers=headers,
             timeout=20
-            )
+        )
+
         print(f"{coin} -> Status {response.status_code}")
+
         if response.status_code != 200:
             print(response.text[:500])
-
             return pd.DataFrame()
 
         data = response.json()
