@@ -106,7 +106,7 @@ def fetch_market_data():
             )
 
         # Avoid CoinGecko rate limits
-        time.sleep(3)
+        time.sleep(5)
 
     if len(all_data) == 0:
 
