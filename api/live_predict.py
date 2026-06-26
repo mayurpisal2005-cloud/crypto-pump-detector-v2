@@ -1,4 +1,4 @@
-
+from fastapi.middleware.cors import CORSMiddleware
 from src.utils.config import LOOKBACK_DAYS
 import requests
 import pandas as pd
@@ -11,6 +11,16 @@ from pydantic import BaseModel
 from pathlib import Path
 app = FastAPI(
     title="Live Crypto Pump Detector"
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5177",
+        "http://localhost:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 from pathlib import Path
