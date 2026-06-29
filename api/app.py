@@ -37,7 +37,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://crypto-pump-bb12dkm1l-super-g0.vercel.app/"
+        "http://crypto-pump-bb12dkm1l-super-g0.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],

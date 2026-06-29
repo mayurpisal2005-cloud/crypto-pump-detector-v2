@@ -16,7 +16,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5177",
-        "http://localhost:5173"
+        "http://localhost:5173",
+        "https://crypto-pump-ui.vercel.app",
+        "https://crypto-pump-bb12dkm1l-super-g0.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -445,7 +447,7 @@ def home():
     return {
         "status": "running"
     }
-@app.post("/predict-coin")
+@app.post("/predict")
 def predict_coin(
     request: CoinRequest
 ):
